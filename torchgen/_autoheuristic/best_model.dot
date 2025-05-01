@@ -1,0 +1,25 @@
+digraph DecisionTree {
+    node [fontname="helvetica"];
+    edge [fontname="helvetica"];
+    139910722059104 [label="mat1_stride_1 <= 75584.00\nnum_samples=42\n0.93, 0.02, 0.02, 0.02", shape=oval];
+    139910216367712 [label="k <= 65.00\nnum_samples=40\n0.97, 0.03, 0, 0", shape=oval];
+    139910722059104 -> 139910216367712 [label="<="];
+    139910227381568 [label="mat1_stride_1 <= 5056.50\nnum_samples=4\n0.75, 0.25, 0, 0", shape=oval];
+    139910216367712 -> 139910227381568 [label="<="];
+    139910258519184 [label="num_samples=2\n1.00, 0, 0, 0", shape=box];
+    139910227381568 -> 139910258519184 [label="<="];
+    139910224454592 [label="mat2_iscontig_True <= 0.50\nnum_samples=2\n0.50, 0.50, 0, 0", shape=oval];
+    139910227381568 -> 139910224454592 [label=">"];
+    139910228007328 [label="num_samples=1\n1.00, 0, 0, 0", shape=box];
+    139910224454592 -> 139910228007328 [label="<="];
+    139910205715328 [label="num_samples=1\n0, 1.00, 0, 0", shape=box];
+    139910224454592 -> 139910205715328 [label=">"];
+    139910253294896 [label="num_samples=36\n1.00, 0, 0, 0", shape=box];
+    139910216367712 -> 139910253294896 [label=">"];
+    139910228990944 [label="mat2_iscontig_False <= 0.50\nnum_samples=2\n0, 0, 0.50, 0.50", shape=oval];
+    139910722059104 -> 139910228990944 [label=">"];
+    139910211823872 [label="num_samples=1\n0, 0, 0, 1.00", shape=box];
+    139910228990944 -> 139910211823872 [label="<="];
+    139910211813744 [label="num_samples=1\n0, 0, 1.00, 0", shape=box];
+    139910228990944 -> 139910211813744 [label=">"];
+}

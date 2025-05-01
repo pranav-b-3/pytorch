@@ -29,7 +29,7 @@ from torch._environment import is_fbcode
 from torch.utils import _config_module
 
 from .resume_execution import TORCH_DYNAMO_RESUME_IN_PREFIX
-from .utils import getfile, hashable, NP_SUPPORTED_MODULES, unwrap_if_wrapper
+from .utils import getfile, hashable, unwrap_if_wrapper # NP_SUPPORTED_MODULES, 
 from .variables import (
     BuiltinVariable,
     FunctionalCallVariable,
@@ -3074,10 +3074,10 @@ def _numpy_function_ids() -> dict[int, str]:
         return False
 
     rv = {}
-    for mod in NP_SUPPORTED_MODULES:
-        for k, v in mod.__dict__.items():
-            if is_supported(k, v, mod):
-                rv[id(v)] = f"{mod.__name__}.{k}"
+    # for mod in NP_SUPPORTED_MODULES:
+    #     for k, v in mod.__dict__.items():
+    #         if is_supported(k, v, mod):
+    #             rv[id(v)] = f"{mod.__name__}.{k}"
     return rv
 
 

@@ -6,10 +6,12 @@ import warnings
 
 import pandas as pd  # type: ignore[import-untyped]
 
-from torch._inductor.autoheuristic.autoheuristic_utils import (
-    CHOICE_COL,
-    get_metadata_str_from_log,
-)
+# from torch._inductor.autoheuristic.autoheuristic_utils import (
+#     CHOICE_COL,
+#     get_metadata_str_from_log,
+# )
+
+CHOICE_COL = "choice"
 
 
 # TODO (AlnisM): Fix these warnings
@@ -22,6 +24,11 @@ warnings.filterwarnings(
     message="DataFrameGroupBy.apply operated on the grouping columns.",
 )
 
+
+def get_metadata_str_from_log(log_path: str) -> str:
+    with open(log_path, newline="") as file:
+        json_string = file.readline().strip()
+        return json_string
 
 class AHTrain:
     """
@@ -95,7 +102,7 @@ class AHTrain:
             self.args.nrows,
             self.args.heuristic_name,
             self.args.save_dot,
-            self.args.ranking is not None,
+            # self.args.ranking is not None,
         )
 
     def filter_df(self, df):
@@ -157,7 +164,8 @@ class AHTrain:
 
     def write_heuristic_to_file(self, lines, heuristic_name):
         output_file = (
-            f"../../../torch/_inductor/autoheuristic/artifacts/_{heuristic_name}.py"
+            # f"../../../torch/_inductor/autoheuristic/artifacts/_{heuristic_name}.py"
+            f"_{heuristic_name}.py"
         )
         path = f"{output_file}"
         with open(path, "w") as f:

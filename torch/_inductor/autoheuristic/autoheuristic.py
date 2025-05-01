@@ -186,6 +186,8 @@ class AutoHeuristic:
         return json.dumps(metadata_dict)
 
     def save_data(self, choice: Choice, feedback_val: Feedback) -> None:
+        if choice in self.collected_feedback:
+            return
         self.collected_feedback[choice] = feedback_val
         log_path = self.log_path
 

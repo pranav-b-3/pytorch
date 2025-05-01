@@ -6,6 +6,7 @@ import functools
 import inspect
 import itertools
 import json
+import csv
 import logging
 import math
 import operator
@@ -2113,9 +2114,115 @@ class AlgorithmSelectorCache(PersistentCache):
         ) -> dict[Union[ExternKernelCaller, TritonTemplateCaller], float]:
             inputs = get_inputs(choices)
             timings = {}
+            
+            csv_file = "/home/zhajia/pytorch/torchgen/_autoheuristic/example/gpu_profile_results.txt"
+            write_headers = not os.path.exists(csv_file)
+
+
             for choice in choices:
+                input_tensors = inputs.triton.input_tensors
+                mat1 = input_tensors[0]
+                mat2 = input_tensors[1]
+                # mat1 = choice.input_nodes[-2]
+                # mat2 = choice.input_nodes[-1]
+
+                m, k = mat1.size()[:2]
+                n = mat2.size()[-1]
+
+                mat1_stride_0, mat1_stride_1 = mat1.stride()
+                mat2_stride_0, mat2_stride_1 = mat2.stride()
+
+                mat1_dtype = str(mat1.dtype)
+                mat2_dtype = str(mat2.dtype)
+
+                mat1_iscontig = mat1.is_contiguous()
+                mat2_iscontig = mat2.is_contiguous()
+
+                using_tf32 = (
+                    "not_float_32" if "float32" not in (mat1_dtype, mat2_dtype) and torch.backends.cuda.matmul.allow_tf32
+                    else "float_32"
+                )
+                if isinstance(choice, torch._inductor.select_algorithm.ExternKernelCaller):
+                    kernel_str = "extern_mm"
+                else:
+                    info = choice.info_dict()
+                    tile_vals = eval(info["tile_shape"])  # ex: (32, 16, 32)
+                    kernel_str = (
+                        f"type=triton_BLOCK-M={tile_vals[0]}_BLOCK-K={tile_vals[1]}_BLOCK-N={tile_vals[2]}"
+                        f"_numstages={info['num_stages']}_numwarps={info['num_warps']}"
+                    )
+                
+                result = {
+                    "delta_time_between_current_reads_ms": torch.nan,
+                    "sm_utilization_before": torch.nan,
+                    "sm_utilization_after": torch.nan,
+                    "memory_utilization_before": torch.nan,
+                    "memory_utilization_after": torch.nan,
+                    "power_usage_watts_avg": torch.nan,
+                    "energy_joules": torch.nan,
+                    "temperature_c": torch.nan,
+                    "delta_time_since_previous_nvml_read_ms": torch.nan,
+                }
+                
                 try:
-                    timing = benchmark_choice_in_current_process(choice, inputs)
+                    import pynvml
+                    pynvml.nvmlInit()
+                    handle = pynvml.nvmlDeviceGetHandleByIndex(torch.cuda.current_device()) 
+                    t0 = time.perf_counter()
+                    util_before = pynvml.nvmlDeviceGetUtilizationRates(handle)
+
+                    power_start = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0  # in watts
+                    timing = benchmark_choice_in_current_process(choice, inputs)   # in ms
+                    power_end = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0
+
+                    time.sleep(0.02)
+                    t1 = time.perf_counter()
+                    util_after = pynvml.nvmlDeviceGetUtilizationRates(handle)
+
+                    temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+                    
+                    result.update({
+                        "delta_time_between_current_reads_ms": (t1 - t0) * 1000.0,
+                        "sm_utilization_before": util_before.gpu,
+                        "sm_utilization_after": util_after.gpu,
+                        "memory_utilization_before": util_before.memory,
+                        "memory_utilization_after": util_after.memory,
+                        "power_usage_watts_avg": (power_start + power_end) / 2,
+                        "energy_joules": ((power_start + power_end) / 2) * (timing / 1000.0),
+                        "temperature_c": temp,
+                    })
+                    
+                    row = {
+                        "m": m,
+                        "k": k,
+                        "n": n,
+                        "mat1_dtype": mat1_dtype,
+                        "mat2_dtype": mat2_dtype,
+                        "mat1_stride_0": mat1_stride_0,
+                        "mat1_stride_1": mat1_stride_1,
+                        "mat2_stride_0": mat2_stride_0,
+                        "mat2_stride_1": mat2_stride_1,
+                        "mat1_iscontig": mat1_iscontig,
+                        "mat2_iscontig": mat2_iscontig,
+                        "using_tf32": using_tf32,
+                        "choice": kernel_str,
+                        "feedback": timing,
+                        # === Append GPU stats directly to same row ===
+                        "delta_time_between_current_reads_ms": result["delta_time_between_current_reads_ms"],
+                        "sm_utilization_before": result["sm_utilization_before"],
+                        "sm_utilization_after": result["sm_utilization_after"],
+                        "memory_utilization_before": result["memory_utilization_before"],
+                        "memory_utilization_after": result["memory_utilization_after"],
+                        "power_usage_watts_avg": result["power_usage_watts_avg"],
+                        "energy_joules": result["energy_joules"],
+                        "temperature_c": result["temperature_c"],
+                        "delta_time_since_previous_nvml_read_ms": result["delta_time_since_previous_nvml_read_ms"],
+                    }
+
+                    if 'last_nvml_ts' in globals() and last_nvml_ts is not None:
+                        result["delta_time_since_previous_nvml_read_ms"] = (t0 - last_nvml_ts) * 1000.0
+
+                    last_nvml_ts = t1
                 except CUDACompileError as e:
                     log.error(
                         "CUDA compilation error during autotuning: \n%s. \nIgnoring this choice.",
@@ -2154,6 +2261,12 @@ class AlgorithmSelectorCache(PersistentCache):
                         raise e from None
 
                 timings[choice] = timing
+                with open(csv_file, mode="a", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=row.keys())
+                    if write_headers:
+                        writer.writeheader()
+                        write_headers = False
+                    writer.writerow(row)
 
             return timings
 
