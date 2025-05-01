@@ -1,3 +1,11 @@
+IN ORDER TO RUN DECISION TREE TRAINING for different alpha, beta:
+
+`python3 runner.py`
+
+IN ORDER TO RUN DECISION TREE TRAINING for SET alpha, beta, set ALPHA, BETA environment variables and then:
+
+`./gen_heuristic_test.sh`
+
 If you just want to re-generate existing heuristics with already collected data for mm for A100/H100, run the following scripts:
 
 `bash get_mm_dataset.sh # Downloads A100 and H100 datasets`

@@ -1,0 +1,25 @@
+digraph DecisionTree {
+    node [fontname="helvetica"];
+    edge [fontname="helvetica"];
+    139694043149136 [label="mat1_stride_1 <= 75584.00\nnum_samples=126\n0.93, 0.02, 0.02, 0.02", shape=oval];
+    139694043148992 [label="m*k <= 1722240.00\nnum_samples=120\n0.97, 0.03, 0, 0", shape=oval];
+    139694043149136 -> 139694043148992 [label="<="];
+    139694066502208 [label="mat2_stride_1 <= 1.50\nnum_samples=12\n0.75, 0.25, 0, 0", shape=oval];
+    139694043148992 -> 139694066502208 [label="<="];
+    139694134986464 [label="mat1_iscontig_False <= 0.50\nnum_samples=6\n0.50, 0.50, 0, 0", shape=oval];
+    139694066502208 -> 139694134986464 [label="<="];
+    139694049132080 [label="num_samples=3\n1.00, 0, 0, 0", shape=box];
+    139694134986464 -> 139694049132080 [label="<="];
+    139694075443680 [label="num_samples=3\n0, 1.00, 0, 0", shape=box];
+    139694134986464 -> 139694075443680 [label=">"];
+    139694121940128 [label="num_samples=6\n1.00, 0, 0, 0", shape=box];
+    139694066502208 -> 139694121940128 [label=">"];
+    139694043145728 [label="num_samples=108\n1.00, 0, 0, 0", shape=box];
+    139694043148992 -> 139694043145728 [label=">"];
+    139694043144816 [label="mat2_stride_0 <= 2.50\nnum_samples=6\n0, 0, 0.50, 0.50", shape=oval];
+    139694043149136 -> 139694043144816 [label=">"];
+    139694043148512 [label="num_samples=3\n0, 0, 0, 1.00", shape=box];
+    139694043144816 -> 139694043148512 [label="<="];
+    139694043145392 [label="num_samples=3\n0, 0, 1.00, 0", shape=box];
+    139694043144816 -> 139694043145392 [label=">"];
+}
